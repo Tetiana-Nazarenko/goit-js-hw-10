@@ -34,10 +34,9 @@ function fetchBreeds() {
 function renderUserList(cats) {
   const markup = cats
     .map(cat => {
-      return `${cat.name}`;
-      // `<li>
-      //     <p> ${cat.name}</p>
-      //   </li>`;
+      return `<li>
+          <p> ${cat.name}</p>
+       </li>`;
     })
     .join('');
   select.innerHTML = markup;
