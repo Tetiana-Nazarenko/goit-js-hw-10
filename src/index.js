@@ -1,50 +1,58 @@
-// import axios from 'axios';
-// console.log(axios.isCancel('something'));
-// axios.defaults.headers.common['x-api-key'] = API_KEY;
-
-const baseUrl = 'https://api.thecatapi.com/v1/breeds';
-console.log(baseUrl);
+import { fetchBreeds, fetchCatByBreed } from './cat-api';
+import './index.css';
+import SlimSelect from 'slim-select';
+import { Notify } from 'notiflix/build/notiflix-notify-aio';
+//import 'slim-select/dist/slimselect.css';
 
 const select = document.querySelector('.breed-select');
-const catInfo = document.querySelector('.cat-info');
 const loader = document.querySelector('.loader');
 const error = document.querySelector('.error');
+const catInfo = document.querySelector('.cat-info');
 
-const API_KEY =
-  'live_IdApGXIAKcxCAjhTnlmbrrlQITj7lRQEEX6tzNIuOlEm5HI0caFpwYL0JNML6eEz';
+loader.classList.replace('loader', 'is-hidden');
+error.classList.add('is-hidden');
+catInfo.classList.add('is-hidden');
 
-function fetchBreeds() {
-  return fetch(`${baseUrl}`)
-    .then(response => {
-      if (!response.ok) {
-        throw new Error(response.status);
-      }
-      return response.json();
-    })
-    .then(cats => {
-      console.log(cats);
-      const markup = renderUserList(cats);
-      console.log(markup);
-    })
-    .catch(error => {
-      console.log(error);
+const cats = [];
+fetchBreeds()
+  .then(data => {
+    data.forEach(el => {
+      cats.push({ text: el.name, value: el.id });
     });
-}
+    new SlimSelect({
+      select: select,
+      data: cats,
+    });
+  })
+  .catch(onError);
 
-function renderUserList(cats) {
-  const markup = cats
-    .map(cat => {
-      return `<li>
-          <p> ${cat.name}</p>
-       </li>`;
+select.addEventListener('change', onSelectBreed);
+
+function onSelectBreed(event) {
+  loader.classList.replace('is-hidden', 'loader');
+  select.classList.add('is-hidden');
+  catInfo.classList.add('is-hidden');
+
+  const breedId = event.currentTarget.value;
+
+  fetchCatByBreed(breedId)
+    .then(data => {
+      loader.classList.replace('loader', 'is-hidden');
+      select.classList.remove('is-hidden');
+      const { url, breeds } = data[0];
+
+      catInfo.innerHTML = `<div class="box-img"><img src="${url}" alt="${breeds[0].name}" width="400"/></div><div class="box"><h1>${breeds[0].name}</h1><p>${breeds[0].description}</p><p><b>Temperament:</b> ${breeds[0].temperament}</p></div>`;
+      catInfo.classList.remove('is-hidden');
     })
-    .join('');
-  select.innerHTML = markup;
+    .catch(onError);
 }
 
-// select.addEventListener('click', () => {
-//   fetchBreeds()
-//     .then(cats => renderUserList(cats))
-//     .catch(error => console.log(error));
-// });
-//fetchBreeds().then(renderUserList).catch();
+function onError(error) {
+  select.classList.remove('is-hidden');
+  loader.classList.replace('loader', 'is-hidden');
+  Notify.failure('Ops! Something went wrong!', {
+    position: 'center-center',
+    width: '400px',
+    fontSize: '60px',
+  });
+}
